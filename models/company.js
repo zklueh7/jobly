@@ -49,7 +49,34 @@ class Company {
    * Returns [{ handle, name, description, numEmployees, logoUrl }, ...]
    * */
 
-  static async findAll() {
+  static async findAll(query) {
+    let queryString = "";
+    let name = query.name;
+    let minEmployees = query.minEmployees;
+    let maxEmployees = query.maxEmployees;
+
+    if (name != undefined) {
+      queryString += `WHERE LOWER(name) LIKE LOWER('%${name}%')`;
+    }
+
+    if ((typeof minEmployees != 'undefined') && (typeof maxEmployees != 'undefined')) {
+      if (+minEmployees > +maxEmployees) {
+        throw new BadRequestError('Min number of employees cannot be greater than max number of employees');
+      }
+      queryString += `AND num_employees > ${minEmployees} AND num_employees < ${maxEmployees}`;
+      console.log("both");
+    }
+
+    else if ((typeof minEmployees != 'undefined') && (typeof maxEmployees == 'undefined')) {
+      queryString += `AND num_employees > ${minEmployees}`;
+      console.log("min");
+    }
+
+    else if ((typeof minEmployees == 'undefined') && (typeof maxEmployees != 'undefined')) {
+      queryString += `AND num_employees < ${maxEmployees}`;
+      console.log("max");
+    }
+
     const companiesRes = await db.query(
           `SELECT handle,
                   name,
@@ -57,7 +84,12 @@ class Company {
                   num_employees AS "numEmployees",
                   logo_url AS "logoUrl"
            FROM companies
-           ORDER BY name`);
+           ${queryString}
+           ORDER BY name;`);
+           
+    if (companiesRes.rows.length === 0) {
+      throw new NotFoundError('No company found matching query');
+    }
     return companiesRes.rows;
   }
 
