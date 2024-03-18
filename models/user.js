@@ -204,6 +204,18 @@ class User {
 
     if (!user) throw new NotFoundError(`No user: ${username}`);
   }
+
+  //apply to job with JobId
+  static async apply(username, jobId) {
+    let result = await db.query(
+      `INSERT INTO applications
+      (username, job_id)
+      VALUES ($1, $2)
+      RETURNING job_id`, [username, jobId]
+    );
+    
+    return result.rows[0];
+  }
 }
 
 

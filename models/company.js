@@ -83,7 +83,6 @@ class Company {
                   description,
                   num_employees AS "numEmployees",
                   logo_url AS "logoUrl"
-           FROM companies
            ${queryString}
            ORDER BY name;`);
            
@@ -115,6 +114,16 @@ class Company {
     const company = companyRes.rows[0];
 
     if (!company) throw new NotFoundError(`No company: ${handle}`);
+
+    const jobsRes = await db.query(
+      `SELECT id,
+              title, 
+              salary,
+              equity 
+        FROM jobs 
+        WHERE company_handle = $1`, [handle]);
+      
+    company.jobs = jobsRes.rows;
 
     return company;
   }
